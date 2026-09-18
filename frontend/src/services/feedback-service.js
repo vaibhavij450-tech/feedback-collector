@@ -9,7 +9,9 @@ const API_URL =
  * @throws {Error} If the request fails.
  */
 export const getFeedback = async () => {
-  const response = await fetch(API_URL);
+  const response = await fetch(API_URL, {
+    credentials: "include",
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch feedback");

@@ -4,8 +4,8 @@ import { updateFeedback } from "../services/feedback-service";
 /**
  * Displays an individual feedback record.
  *
- * Customers can edit the feedback if they have
- * ownership of the record.
+ * Customers can edit the feedback only if they
+ * own the record.
  *
  * @param {Object} props - Component properties.
  * @param {Object} props.feedback - Feedback record.
@@ -191,15 +191,18 @@ function FeedbackItem({
         {new Date(feedback.createdAt).toLocaleString()}
       </small>
 
-      <div className="mt-3">
-        <button
-          type="button"
-          className="btn btn-outline-dark btn-sm"
-          onClick={handleEdit}
-        >
-          Edit
-        </button>
-      </div>
+      {/* Show Edit only for the owner */}
+      {feedback.isOwner && (
+        <div className="mt-3">
+          <button
+            type="button"
+            className="btn btn-outline-dark btn-sm"
+            onClick={handleEdit}
+          >
+            Edit
+          </button>
+        </div>
+      )}
     </div>
   );
 }

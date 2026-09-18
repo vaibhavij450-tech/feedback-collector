@@ -659,7 +659,30 @@ button {
 
 .filters input[type="date"] {
   width: 165px;
+  min-height: 52px;
   padding: 0 13px;
+
+  /* Keep the native date control readable on mobile browsers. */
+  color: var(--muted);
+  color-scheme: light;
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+
+.filters input[type="date"]::-webkit-datetime-edit,
+.filters input[type="date"]::-webkit-datetime-edit-text,
+.filters input[type="date"]::-webkit-datetime-edit-month-field,
+.filters input[type="date"]::-webkit-datetime-edit-day-field,
+.filters input[type="date"]::-webkit-datetime-edit-year-field {
+  color: var(--muted);
+}
+
+.filters input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  opacity: 0.7;
+  cursor: pointer;
 }
 
 .filters input::placeholder {
@@ -1377,6 +1400,12 @@ button {
     width: 100%;
   }
 
+  .filters input[type="date"] {
+    min-height: 52px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
   /* FEEDBACK CARD */
 
   .feedback-item {
@@ -1652,5 +1681,114 @@ button {
 
   .success-toast-content span {
     font-size: 12px;
+  }
+}
+/* =========================================
+   DATE FILTER
+========================================= */
+
+.date-filter {
+  display: flex;
+  align-items: center;
+}
+
+.date-input-wrapper {
+  position: relative;
+  width: 165px;
+}
+
+.date-placeholder {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+
+  color: #8a919d;
+  font-size: 14px;
+  line-height: 1;
+
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Date input */
+.date-input-wrapper input[type="date"] {
+  width: 165px;
+  min-height: 52px;
+  padding: 0 13px;
+
+  color: var(--muted);
+  background: #fbf7f0;
+  color-scheme: light;
+
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+
+/* Hide ONLY the browser's empty date text */
+.date-input-wrapper input[type="date"].date-empty::-webkit-datetime-edit {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.date-input-wrapper input[type="date"].date-empty::-webkit-datetime-edit-text {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.date-input-wrapper input[type="date"].date-empty::-webkit-datetime-edit-month-field {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.date-input-wrapper input[type="date"].date-empty::-webkit-datetime-edit-day-field {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.date-input-wrapper input[type="date"].date-empty::-webkit-datetime-edit-year-field {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Calendar icon */
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+/* Focus */
+.date-input-wrapper input[type="date"]:focus {
+  border-color: var(--orange);
+
+  box-shadow:
+    0 0 0 4px rgba(237, 118, 81, 0.08);
+}
+
+/* Mobile */
+@media (max-width: 650px) {
+  .date-filter {
+    width: 100%;
+  }
+
+  .date-input-wrapper {
+    width: 100%;
+  }
+
+  .date-input-wrapper input[type="date"] {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
+  .date-placeholder {
+    left: 14px;
+    font-size: 15px;
   }
 }

@@ -78,6 +78,7 @@ function FeedbackPage({
           </div>
 
           <div className="filters row g-2 w-100 w-lg-auto">
+            {/* Search */}
             <div className="col-12 col-sm">
               <input
                 type="text"
@@ -91,18 +92,31 @@ function FeedbackPage({
               />
             </div>
 
-            <div className="col-12 col-sm-auto">
-              <input
-                type="date"
-                className="form-control"
-                value={dateFilter}
-                onChange={(event) =>
-                  setDateFilter(event.target.value)
-                }
-                aria-label="Filter feedback by date"
-              />
+            {/* Date filter */}
+            <div className="col-12 col-sm-auto date-filter">
+              <div className="date-input-wrapper">
+                {!dateFilter && (
+                  <span className="date-placeholder">
+                    Filter by date
+                  </span>
+                )}
+
+                <input
+                  id="date-filter"
+                  type="date"
+                  className={`form-control ${
+                    !dateFilter ? "date-empty" : ""
+                  }`}
+                  value={dateFilter}
+                  onChange={(event) =>
+                    setDateFilter(event.target.value)
+                  }
+                  aria-label="Filter feedback by date"
+                />
+              </div>
             </div>
 
+            {/* Clear */}
             <div className="col-12 col-sm-auto">
               <button
                 type="button"

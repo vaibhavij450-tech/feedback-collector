@@ -38,7 +38,8 @@ const createFeedback = async (req, res) => {
     res.cookie("ownerToken", ownerToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite:
+        process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 365 * 24 * 60 * 60 * 1000,
     });
 
@@ -47,9 +48,16 @@ const createFeedback = async (req, res) => {
     // Never send the ownership hash to the frontend.
     delete responseFeedback.ownerTokenHash;
 
+    // The feedback just created belongs to the
+    // customer who submitted it.
+    responseFeedback.isOwner = true;
+
     return res.status(201).json(responseFeedback);
   } catch (error) {
-    console.error("Failed to create feedback:", error.message);
+    console.error(
+      "Failed to create feedback:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Failed to create feedback",
@@ -59,7 +67,8 @@ const createFeedback = async (req, res) => {
 };
 
 /**
- * Retrieves all feedback records.
+ * Retrieves all feedback records and identifies
+ * which records belong to the current customer.
  *
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
@@ -67,15 +76,48 @@ const createFeedback = async (req, res) => {
  */
 const getFeedback = async (req, res) => {
   try {
+    const ownerToken = req.cookies.ownerToken;
+
+    // Hash the owner's cookie so it can be compared
+    // with the hash stored in MongoDB.
+    const ownerTokenHash = ownerToken
+      ? crypto
+          .createHash("sha256")
+          .update(ownerToken)
+          .digest("hex")
+      : null;
+
+    // Explicitly include ownerTokenHash because the model
+    // hides this field by default.
     const feedback = await Feedback.find()
-      .select("-ownerTokenHash")
+      .select("+ownerTokenHash")
       .sort({
         createdAt: -1,
       });
 
-    return res.status(200).json(feedback);
+    const responseFeedback = feedback.map((item) => {
+      const feedbackObject = item.toObject();
+
+      const isOwner =
+        Boolean(ownerTokenHash) &&
+        Boolean(feedbackObject.ownerTokenHash) &&
+        feedbackObject.ownerTokenHash === ownerTokenHash;
+
+      // Never expose the ownership hash to the frontend.
+      delete feedbackObject.ownerTokenHash;
+
+      return {
+        ...feedbackObject,
+        isOwner,
+      };
+    });
+
+    return res.status(200).json(responseFeedback);
   } catch (error) {
-    console.error("Failed to fetch feedback:", error.message);
+    console.error(
+      "Failed to fetch feedback:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Failed to fetch feedback",
@@ -99,7 +141,8 @@ const updateFeedback = async (req, res) => {
 
     if (!ownerToken) {
       return res.status(403).json({
-        message: "You are not allowed to edit this feedback",
+        message:
+          "You are not allowed to edit this feedback",
       });
     }
 
@@ -115,7 +158,8 @@ const updateFeedback = async (req, res) => {
 
     if (!feedback) {
       return res.status(403).json({
-        message: "You are not allowed to edit this feedback",
+        message:
+          "You are not allowed to edit this feedback",
       });
     }
 
@@ -131,9 +175,17 @@ const updateFeedback = async (req, res) => {
 
     await feedback.save();
 
-    return res.status(200).json(feedback);
+    const responseFeedback = feedback.toObject();
+
+    // The requester has successfully edited their own feedback.
+    responseFeedback.isOwner = true;
+
+    return res.status(200).json(responseFeedback);
   } catch (error) {
-    console.error("Failed to update feedback:", error.message);
+    console.error(
+      "Failed to update feedback:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Failed to update feedback",
@@ -153,7 +205,8 @@ const deleteFeedback = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const feedback = await Feedback.findByIdAndDelete(id);
+    const feedback =
+      await Feedback.findByIdAndDelete(id);
 
     if (!feedback) {
       return res.status(404).json({
@@ -165,7 +218,10 @@ const deleteFeedback = async (req, res) => {
       message: "Feedback deleted successfully",
     });
   } catch (error) {
-    console.error("Failed to delete feedback:", error.message);
+    console.error(
+      "Failed to delete feedback:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Failed to delete feedback",
