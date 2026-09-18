@@ -1,7 +1,8 @@
+const crypto = require("crypto");
 const Feedback = require("../models/Feedback");
 
 /**
- * Creates a new feedback record in the database.
+ * Creates a new feedback record and assigns a private owner token.
  *
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
@@ -17,15 +18,40 @@ const createFeedback = async (req, res) => {
       });
     }
 
+    // Generate a random token that identifies the feedback owner.
+    const ownerToken = crypto.randomBytes(32).toString("hex");
+
+    // Store only the hash in MongoDB.
+    const ownerTokenHash = crypto
+      .createHash("sha256")
+      .update(ownerToken)
+      .digest("hex");
+
     const feedback = await Feedback.create({
       name,
       email,
       message,
+      ownerTokenHash,
     });
 
-    res.status(201).json(feedback);
+    // Store the raw token in an HTTP-only cookie.
+    res.cookie("ownerToken", ownerToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+    });
+
+    const responseFeedback = feedback.toObject();
+
+    // Never send the ownership hash to the frontend.
+    delete responseFeedback.ownerTokenHash;
+
+    return res.status(201).json(responseFeedback);
   } catch (error) {
-    res.status(500).json({
+    console.error("Failed to create feedback:", error.message);
+
+    return res.status(500).json({
       message: "Failed to create feedback",
       error: error.message,
     });
@@ -33,7 +59,7 @@ const createFeedback = async (req, res) => {
 };
 
 /**
- * Retrieves all feedback records from the database.
+ * Retrieves all feedback records.
  *
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
@@ -41,14 +67,76 @@ const createFeedback = async (req, res) => {
  */
 const getFeedback = async (req, res) => {
   try {
-    const feedback = await Feedback.find().sort({
-      createdAt: -1,
-    });
+    const feedback = await Feedback.find()
+      .select("-ownerTokenHash")
+      .sort({
+        createdAt: -1,
+      });
 
-    res.status(200).json(feedback);
+    return res.status(200).json(feedback);
   } catch (error) {
-    res.status(500).json({
+    console.error("Failed to fetch feedback:", error.message);
+
+    return res.status(500).json({
       message: "Failed to fetch feedback",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Updates feedback only when the requester owns the feedback record.
+ *
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Promise<void>} Sends the updated feedback as the response.
+ */
+const updateFeedback = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, message } = req.body;
+    const ownerToken = req.cookies.ownerToken;
+
+    if (!ownerToken) {
+      return res.status(403).json({
+        message: "You are not allowed to edit this feedback",
+      });
+    }
+
+    const ownerTokenHash = crypto
+      .createHash("sha256")
+      .update(ownerToken)
+      .digest("hex");
+
+    const feedback = await Feedback.findOne({
+      _id: id,
+      ownerTokenHash,
+    }).select("-ownerTokenHash");
+
+    if (!feedback) {
+      return res.status(403).json({
+        message: "You are not allowed to edit this feedback",
+      });
+    }
+
+    if (!name || !email || !message) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    feedback.name = name;
+    feedback.email = email;
+    feedback.message = message;
+
+    await feedback.save();
+
+    return res.status(200).json(feedback);
+  } catch (error) {
+    console.error("Failed to update feedback:", error.message);
+
+    return res.status(500).json({
+      message: "Failed to update feedback",
       error: error.message,
     });
   }
@@ -73,11 +161,13 @@ const deleteFeedback = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Feedback deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Failed to delete feedback:", error.message);
+
+    return res.status(500).json({
       message: "Failed to delete feedback",
       error: error.message,
     });
@@ -87,5 +177,6 @@ const deleteFeedback = async (req, res) => {
 module.exports = {
   createFeedback,
   getFeedback,
+  updateFeedback,
   deleteFeedback,
 };

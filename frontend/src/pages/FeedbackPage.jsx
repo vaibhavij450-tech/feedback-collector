@@ -12,6 +12,7 @@ import FeedbackList from "../components/FeedbackList";
  * @param {boolean} props.loading - Loading state.
  * @param {string} props.error - Error message.
  * @param {Function} props.onFeedbackAdded - Callback for adding feedback.
+ * @param {Function} props.onFeedbackUpdated - Callback for updating feedback.
  * @param {Function} props.onDelete - Callback for deleting feedback.
  * @returns {JSX.Element} Feedback page UI.
  */
@@ -20,6 +21,7 @@ function FeedbackPage({
   loading,
   error,
   onFeedbackAdded,
+  onFeedbackUpdated,
   onDelete,
 }) {
   const [search, setSearch] = useState("");
@@ -136,6 +138,7 @@ function FeedbackPage({
           <FeedbackList
             feedback={filteredFeedback}
             onDelete={onDelete}
+            onFeedbackUpdated={onFeedbackUpdated}
           />
         )}
       </section>

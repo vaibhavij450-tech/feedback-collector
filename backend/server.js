@@ -1,17 +1,41 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const connectDatabase = require("./config/database");
 const feedbackRoutes = require("./routes/FeedbackRoutes");
+const authRoutes = require("./routes/AuthRoutes");
 
 const app = express();
 
 // Enable cross-origin requests from the React frontend.
-app.use(cors());
-
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5177",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5177",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 // Parse incoming JSON request bodies.
 app.use(express.json());
+
+// Parse authentication cookies.
+app.use(cookieParser());
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -21,6 +45,9 @@ app.get("/api/health", (req, res) => {
 
 // Mount all feedback-related API routes.
 app.use("/api/feedback", feedbackRoutes);
+
+// Mount authentication-related API routes.
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 

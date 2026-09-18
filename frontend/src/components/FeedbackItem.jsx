@@ -1,103 +1,206 @@
+import { useState } from "react";
+import { updateFeedback } from "../services/feedback-service";
+
 /**
- * Displays a single feedback record.
+ * Displays an individual feedback record.
+ *
+ * Customers can edit the feedback if they have
+ * ownership of the record.
  *
  * @param {Object} props - Component properties.
- * @param {Object} props.feedback - Feedback record to display.
- * @param {Function} props.onDelete - Callback used to request deletion.
+ * @param {Object} props.feedback - Feedback record.
+ * @param {Function} props.onFeedbackUpdated - Callback after successful update.
  * @returns {JSX.Element} Feedback item UI.
  */
-function FeedbackItem({ feedback, onDelete }) {
-  // Convert the database timestamp into a readable local date and time.
-  const formattedDate = new Date(
-    feedback.createdAt
-  ).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+function FeedbackItem({
+  feedback,
+  onFeedbackUpdated,
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: feedback.name,
+    email: feedback.email,
+    message: feedback.message,
   });
 
-  // Get the first letter of the user's name for the avatar.
-  const initial = feedback.name
-    ? feedback.name.charAt(0).toUpperCase()
-    : "?";
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  /**
+   * Updates the local form state when an input changes.
+   *
+   * @param {Object} event - Input change event.
+   */
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
+  };
+
+  /**
+   * Opens the feedback editing form.
+   */
+  const handleEdit = () => {
+    setError("");
+
+    setFormData({
+      name: feedback.name,
+      email: feedback.email,
+      message: feedback.message,
+    });
+
+    setIsEditing(true);
+  };
+
+  /**
+   * Cancels the current edit operation.
+   */
+  const handleCancel = () => {
+    setIsEditing(false);
+    setError("");
+  };
+
+  /**
+   * Updates the feedback belonging to the current customer.
+   *
+   * @param {Object} event - Form submission event.
+   */
+  const handleSave = async (event) => {
+    event.preventDefault();
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const updatedFeedback = await updateFeedback(
+        feedback._id,
+        formData
+      );
+
+      onFeedbackUpdated(updatedFeedback);
+      setIsEditing(false);
+    } catch (error) {
+      console.error(error);
+      setError(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="feedback-card">
+        <form onSubmit={handleSave}>
+          <div className="mb-3">
+            <label className="form-label">
+              Name
+            </label>
+
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="form-control"
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">
+              Email
+            </label>
+
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="form-control"
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">
+              Message
+            </label>
+
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              className="form-control"
+              rows="4"
+              required
+            />
+          </div>
+
+          {error && (
+            <div
+              className="alert alert-danger"
+              role="alert"
+            >
+              {error}
+            </div>
+          )}
+
+          <div className="d-flex gap-2">
+            <button
+              type="submit"
+              className="btn btn-dark"
+              disabled={isSaving}
+            >
+              {isSaving
+                ? "Saving..."
+                : "Save Changes"}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
-    <article className="feedback-item p-3 p-md-4">
-      <div className="feedback-item-top d-flex align-items-start justify-content-between gap-3">
-        <div className="user-info d-flex align-items-center gap-3">
-          <div
-            className="avatar flex-shrink-0"
-            aria-hidden="true"
-          >
-            {initial}
-          </div>
-
-          <div>
-            <h3>{feedback.name}</h3>
-            <p>{feedback.email}</p>
-          </div>
+    <div className="feedback-card">
+      <div className="feedback-card-header">
+        <div>
+          <h3>{feedback.name}</h3>
+          <p>{feedback.email}</p>
         </div>
-
-        <button
-          type="button"
-          className="delete-button flex-shrink-0"
-          onClick={() => onDelete(feedback)}
-          aria-label={`Delete feedback from ${feedback.name}`}
-          title="Delete feedback"
-        >
-          <svg
-            className="delete-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              d="M4 7H20"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-
-            <path
-              d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-
-            <path
-              d="M7 7L8 19C8.0479 19.5708 8.52669 20 9.1 20H14.9C15.4733 20 15.9521 19.5708 16 19L17 7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            <path
-              d="M10 11V16"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-
-            <path
-              d="M14 11V16"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
       </div>
 
       <p className="feedback-message">
         {feedback.message}
       </p>
 
-      <div className="feedback-date">
-        Submitted on {formattedDate}
+      <small>
+        {new Date(feedback.createdAt).toLocaleString()}
+      </small>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          className="btn btn-outline-dark btn-sm"
+          onClick={handleEdit}
+        >
+          Edit
+        </button>
       </div>
-    </article>
+    </div>
   );
 }
 

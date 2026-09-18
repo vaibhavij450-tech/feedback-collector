@@ -1,23 +1,33 @@
 import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import FeedbackPage from "./pages/FeedbackPage";
-import ModalComponent from "./components/ModalComponent";
+import LoginPage from "./pages/LoginPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import {
   getFeedback,
   createFeedback,
-  deleteFeedback,
 } from "./services/feedback-service";
+
 import "./App.css";
 
 /**
- * Main application component.
+ * Displays the public customer feedback interface.
  *
- * Handles application state and communication with the backend.
+ * Customers can submit feedback, view existing feedback,
+ * and edit feedback that belongs to them.
  *
- * @returns {JSX.Element} Main application UI.
+ * @returns {JSX.Element} Customer feedback interface.
  */
-function App() {
+function CustomerPage() {
   const [feedback, setFeedback] = useState([]);
-  const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,51 +58,36 @@ function App() {
   /**
    * Creates a new feedback record.
    *
-   * @param {Object} newFeedback - Feedback data submitted by the user.
+   * @param {Object} newFeedback - Feedback submitted by the customer.
    * @returns {Promise<void>} Resolves after feedback is created.
    */
   const handleAddFeedback = async (newFeedback) => {
-    const createdFeedback = await createFeedback(newFeedback);
-
-    setFeedback((previous) => [
-      createdFeedback,
-      ...previous,
-    ]);
-  };
-
-  /**
-   * Opens the delete confirmation modal.
-   *
-   * @param {Object} item - Feedback record selected for deletion.
-   */
-  const handleDeleteRequest = (item) => {
-    setSelectedFeedback(item);
-  };
-
-  /**
-   * Deletes the selected feedback record.
-   *
-   * @returns {Promise<void>} Resolves after deletion is completed.
-   */
-  const handleDeleteConfirm = async () => {
-    if (!selectedFeedback) {
-      return;
-    }
-
     try {
-      await deleteFeedback(selectedFeedback._id);
+      const createdFeedback = await createFeedback(newFeedback);
 
-      setFeedback((previous) =>
-        previous.filter(
-          (item) => item._id !== selectedFeedback._id
-        )
-      );
-
-      setSelectedFeedback(null);
+      setFeedback((previous) => [
+        createdFeedback,
+        ...previous,
+      ]);
     } catch (error) {
       console.error(error);
-      setError("Unable to delete feedback.");
+      setError("Unable to submit feedback.");
     }
+  };
+
+  /**
+   * Updates an existing feedback record in local state.
+   *
+   * @param {Object} updatedFeedback - Updated feedback returned by the backend.
+   */
+  const handleFeedbackUpdated = (updatedFeedback) => {
+    setFeedback((previous) =>
+      previous.map((item) =>
+        item._id === updatedFeedback._id
+          ? updatedFeedback
+          : item
+      )
+    );
   };
 
   return (
@@ -120,15 +115,67 @@ function App() {
           loading={loading}
           error={error}
           onFeedbackAdded={handleAddFeedback}
-          onDelete={handleDeleteRequest}
+          onFeedbackUpdated={handleFeedbackUpdated}
         />
       </main>
-      <ModalComponent
-  feedback={selectedFeedback}
-  onCancel={() => setSelectedFeedback(null)}
-  onConfirm={handleDeleteConfirm}
-/>
     </div>
+  );
+}
+
+/**
+ * Main application router.
+ *
+ * @returns {JSX.Element} Application routes.
+ */
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public customer interface */}
+        <Route
+          path="/"
+          element={<CustomerPage />}
+        />
+
+        {/* Separate administrator login */}
+        <Route
+          path="/admin/login"
+          element={<LoginPage />}
+        />
+
+        {/* Protected administrator dashboard */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Redirect /admin to the administrator login */}
+        <Route
+          path="/admin"
+          element={
+            <Navigate
+              to="/admin/login"
+              replace
+            />
+          }
+        />
+
+        {/* Redirect unknown routes to the customer page */}
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

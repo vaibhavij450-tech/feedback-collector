@@ -1,4 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/feedback";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000/api/feedback";
+
 /**
  * Retrieves all feedback records from the server.
  *
@@ -28,14 +31,51 @@ export const createFeedback = async (feedback) => {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(feedback),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    throw new Error("Failed to create feedback");
+    throw new Error(
+      data.message || "Failed to create feedback"
+    );
   }
 
-  return response.json();
+  return data;
+};
+
+/**
+ * Updates an existing feedback record.
+ *
+ * The backend verifies that the current customer owns
+ * the feedback before allowing the update.
+ *
+ * @param {string} id - Unique ID of the feedback record.
+ * @param {Object} feedback - Updated feedback data.
+ * @returns {Promise<Object>} The updated feedback record.
+ * @throws {Error} If the request fails.
+ */
+export const updateFeedback = async (id, feedback) => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(feedback),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Failed to update feedback"
+    );
+  }
+
+  return data;
 };
 
 /**
@@ -48,11 +88,16 @@ export const createFeedback = async (feedback) => {
 export const deleteFeedback = async (id) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
+    credentials: "include",
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    throw new Error("Failed to delete feedback");
+    throw new Error(
+      data.message || "Failed to delete feedback"
+    );
   }
 
-  return response.json();
+  return data;
 };

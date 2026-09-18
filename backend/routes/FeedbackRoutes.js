@@ -3,8 +3,11 @@ const express = require("express");
 const {
   createFeedback,
   getFeedback,
+  updateFeedback,
   deleteFeedback,
 } = require("../controllers/FeedbackController");
+
+const authenticateAdmin = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -19,8 +22,15 @@ router.post("/", createFeedback);
 router.get("/", getFeedback);
 
 /**
- * Handles requests to delete a feedback record by ID.
+ * Handles requests to update feedback.
+ * Only the owner of the feedback can edit it.
  */
-router.delete("/:id", deleteFeedback);
+router.put("/:id", updateFeedback);
+
+/**
+ * Handles requests to delete a feedback record by ID.
+ * Requires authenticated admin access.
+ */
+router.delete("/:id", authenticateAdmin, deleteFeedback);
 
 module.exports = router;

@@ -23,10 +23,19 @@ const feedbackSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    ownerTokenHash: {
+      type: String,
+      required: true,
+      select: false,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model("Feedback", feedbackSchema);
+module.exports = mongoose.model(
+  "Feedback",
+  feedbackSchema
+);
