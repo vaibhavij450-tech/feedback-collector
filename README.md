@@ -9,42 +9,47 @@ A full-stack feedback management platform where customers can submit and manage 
 - **Customer:** [https://feedback-collector-liart.vercel.app](https://feedback-collector-liart.vercel.app)
 - **Admin:** [https://feedback-collector-liart.vercel.app/admin/login](https://feedback-collector-liart.vercel.app/admin/login)
 
-
 ## Features
 
 ### Customer
 
 - Submit feedback with name, email, and message
-- Search and filter feedback
-- Edit and delete feedback created in the current browser
-- Delete confirmation
-- Responsive desktop and mobile UI
+- View all submitted feedback
+- Search feedback by name, email, or message
+- Filter feedback by date
+- Edit feedback created in the current browser
+- Delete owned feedback with confirmation
+- Responsive desktop and mobile interface
 
 ### Admin
 
 - Secure admin login
-- Protected dashboard
-- View, search, filter, and delete feedback
+- Protected admin dashboard
+- View all customer feedback
+- Search and filter feedback
+- Delete feedback
 - Separate admin and customer permissions
 
 ## Architecture
 
 **React Frontend**  
-Forms, UI, routing, search and filters
+Handles the user interface, forms, routing, feedback display, search, filtering, and customer interactions.
 
 **Express Backend**  
-REST API, validation, authentication and authorization
+Provides REST APIs for feedback and authentication, along with validation and authorization.
 
 **MongoDB**  
-Persistent feedback storage
+Stores feedback data and ownership information securely.
 
 Customer and admin workflows use the same backend with different access permissions.
 
 ## Customer Ownership
 
-Each submitted feedback receives a browser-specific ownership token. The token is stored in an HTTP-only cookie, while its hashed value is stored in MongoDB. The backend verifies this token before allowing edit or delete operations.
+Each submitted feedback receives a browser-specific ownership token. The token is stored in an HTTP-only cookie, while its hashed value is stored in MongoDB.
 
-Because ownership is browser-based, feedback is not automatically editable from another browser or device. An account-based ownership system is planned for a future version.
+When a customer attempts to edit or delete feedback, the backend verifies the ownership token before performing the operation.
+
+Because ownership is currently browser-based, feedback cannot automatically be managed from another browser or device. An account-based ownership system is planned for a future version.
 
 ## Project Structure
 
@@ -65,8 +70,7 @@ feedback-collector/
     ├── models/
     ├── routes/
     └── server.js
-
-
+```
 
 ## Future Scope
 
