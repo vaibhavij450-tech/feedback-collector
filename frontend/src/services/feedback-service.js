@@ -1,13 +1,26 @@
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api/feedback";
+const getApiBaseUrl = () => {
+  const hostname = window.location.hostname;
 
-/**
- * Retrieves all feedback records from the server.
- *
- * @returns {Promise<Array>} List of feedback records.
- * @throws {Error} If the request fails.
- */
+  // When testing from another device on the same Wi-Fi,
+  // use the backend running on this laptop.
+  if (
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1"
+  ) {
+    return `http://${hostname}:5000/api/feedback`;
+  }
+
+  // Production: use the Render backend.
+  return (
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000/api/feedback"
+  );
+};
+
+const API_URL = getApiBaseUrl();
+
 export const getFeedback = async () => {
   const response = await fetch(API_URL, {
     credentials: "include",
@@ -20,13 +33,6 @@ export const getFeedback = async () => {
   return response.json();
 };
 
-/**
- * Submits a new feedback record to the server.
- *
- * @param {Object} feedback - Feedback data to submit.
- * @returns {Promise<Object>} The newly created feedback record.
- * @throws {Error} If the request fails.
- */
 export const createFeedback = async (feedback) => {
   const response = await fetch(API_URL, {
     method: "POST",
@@ -48,17 +54,6 @@ export const createFeedback = async (feedback) => {
   return data;
 };
 
-/**
- * Updates an existing feedback record.
- *
- * The backend verifies that the current customer owns
- * the feedback before allowing the update.
- *
- * @param {string} id - Unique ID of the feedback record.
- * @param {Object} feedback - Updated feedback data.
- * @returns {Promise<Object>} The updated feedback record.
- * @throws {Error} If the request fails.
- */
 export const updateFeedback = async (id, feedback) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
@@ -80,16 +75,6 @@ export const updateFeedback = async (id, feedback) => {
   return data;
 };
 
-/**
- * Deletes feedback belonging to the current customer.
- *
- * The backend verifies ownership using the customer's
- * HTTP-only owner token.
- *
- * @param {string} id - Unique ID of the feedback record.
- * @returns {Promise<Object>} The server response.
- * @throws {Error} If the request fails.
- */
 export const deleteOwnFeedback = async (id) => {
   const response = await fetch(`${API_URL}/own/${id}`, {
     method: "DELETE",
@@ -107,13 +92,6 @@ export const deleteOwnFeedback = async (id) => {
   return data;
 };
 
-/**
- * Deletes a feedback record as an administrator.
- *
- * @param {string} id - Unique ID of the feedback record.
- * @returns {Promise<Object>} The server response.
- * @throws {Error} If the request fails.
- */
 export const deleteFeedback = async (id) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",

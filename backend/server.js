@@ -14,39 +14,54 @@ app.use(
   cors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5177",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-  "http://127.0.0.1:5177",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-      if (!origin || allowedOrigins.includes(origin)) {
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5177",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5177",
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+
+      // Allow local network Vite addresses such as:
+      // http://192.168.1.29:5173
+      const isLocalNetworkOrigin =
+        /^http:\/\/192\.168\.1\.\d{1,3}:5173$/.test(
+          origin || ""
+        );
+
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        isLocalNetworkOrigin
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
+
     credentials: true,
   })
 );
+
 // Parse incoming JSON request bodies.
 app.use(express.json());
 
 // Parse authentication cookies.
 app.use(cookieParser());
 
+// Health check.
 app.get("/api/health", (req, res) => {
   res.json({
     message: "Feedback Practice API is running",
   });
 });
 
-// Mount all feedback-related API routes.
+// Feedback routes.
 app.use("/api/feedback", feedbackRoutes);
 
-// Mount authentication-related API routes.
+// Authentication routes.
 app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;

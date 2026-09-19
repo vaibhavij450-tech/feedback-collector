@@ -45,12 +45,8 @@ function FeedbackPage({
       />
 
       <section className="feedback-section">
-        <div className="feedback-header">
+        <div className="section-top">
           <div>
-            <span className="section-label">
-              COMMUNITY NOTES
-            </span>
-
             <h2>
               All
               <br />
@@ -72,16 +68,29 @@ function FeedbackPage({
               }
             />
 
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(event) =>
-                setDateFilter(event.target.value)
-              }
-            />
+            <div className="date-filter">
+              <div className="date-input-wrapper">
+                {!dateFilter && (
+                  <span className="date-placeholder">
+                    Filter by date
+                  </span>
+                )}
+
+                <input
+                  type="date"
+                  className={!dateFilter ? "date-empty" : ""}
+                  value={dateFilter}
+                  onChange={(event) =>
+                    setDateFilter(event.target.value)
+                  }
+                  aria-label="Filter by date"
+                />
+              </div>
+            </div>
 
             <button
               type="button"
+              className="clear-button"
               onClick={clearFilters}
             >
               Clear
