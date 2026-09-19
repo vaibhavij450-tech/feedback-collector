@@ -65,3 +65,17 @@ feedback-collector/
     ├── models/
     ├── routes/
     └── server.js
+## Future Scope
+
+- Customer accounts and cross-device access
+- Feedback status, categories, and priorities
+- Admin-customer communication
+- Analytics and notifications
+- Advanced search and pagination
+- Role-based access and audit logs
+- Automated testing and CI/CD
+
+## Author
+
+**Vaibhavi Jain**  
+DIT University, Dehradun
