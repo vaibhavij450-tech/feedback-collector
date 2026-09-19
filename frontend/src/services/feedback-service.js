@@ -81,7 +81,34 @@ export const updateFeedback = async (id, feedback) => {
 };
 
 /**
- * Deletes a feedback record from the server.
+ * Deletes feedback belonging to the current customer.
+ *
+ * The backend verifies ownership using the customer's
+ * HTTP-only owner token.
+ *
+ * @param {string} id - Unique ID of the feedback record.
+ * @returns {Promise<Object>} The server response.
+ * @throws {Error} If the request fails.
+ */
+export const deleteOwnFeedback = async (id) => {
+  const response = await fetch(`${API_URL}/own/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Failed to delete feedback"
+    );
+  }
+
+  return data;
+};
+
+/**
+ * Deletes a feedback record as an administrator.
  *
  * @param {string} id - Unique ID of the feedback record.
  * @returns {Promise<Object>} The server response.

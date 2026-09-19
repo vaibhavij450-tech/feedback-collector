@@ -1,20 +1,13 @@
 import { useState } from "react";
-import { updateFeedback } from "../services/feedback-service";
+import {
+  updateFeedback,
+  deleteOwnFeedback,
+} from "../services/feedback-service";
 
-/**
- * Displays an individual feedback record.
- *
- * Customers can edit the feedback only if they
- * own the record.
- *
- * @param {Object} props - Component properties.
- * @param {Object} props.feedback - Feedback record.
- * @param {Function} props.onFeedbackUpdated - Callback after successful update.
- * @returns {JSX.Element} Feedback item UI.
- */
 function FeedbackItem({
   feedback,
   onFeedbackUpdated,
+  onFeedbackDeleted,
 }) {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -25,13 +18,9 @@ function FeedbackItem({
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  /**
-   * Updates the local form state when an input changes.
-   *
-   * @param {Object} event - Input change event.
-   */
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -41,9 +30,6 @@ function FeedbackItem({
     }));
   };
 
-  /**
-   * Opens the feedback editing form.
-   */
   const handleEdit = () => {
     setError("");
 
@@ -56,19 +42,17 @@ function FeedbackItem({
     setIsEditing(true);
   };
 
-  /**
-   * Cancels the current edit operation.
-   */
   const handleCancel = () => {
     setIsEditing(false);
     setError("");
+
+    setFormData({
+      name: feedback.name,
+      email: feedback.email,
+      message: feedback.message,
+    });
   };
 
-  /**
-   * Updates the feedback belonging to the current customer.
-   *
-   * @param {Object} event - Form submission event.
-   */
   const handleSave = async (event) => {
     event.preventDefault();
 
@@ -82,12 +66,37 @@ function FeedbackItem({
       );
 
       onFeedbackUpdated(updatedFeedback);
+
       setIsEditing(false);
     } catch (error) {
       console.error(error);
-      setError(error.message);
+      setError(error.message || "Unable to update feedback.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your feedback? This action cannot be undone."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError("");
+
+    try {
+      await deleteOwnFeedback(feedback._id);
+
+      onFeedbackDeleted(feedback._id);
+    } catch (error) {
+      console.error(error);
+      setError(error.message || "Unable to delete feedback.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -96,55 +105,64 @@ function FeedbackItem({
       <div className="feedback-card">
         <form onSubmit={handleSave}>
           <div className="mb-3">
-            <label className="form-label">
+            <label
+              htmlFor={`edit-name-${feedback._id}`}
+              className="form-label"
+            >
               Name
             </label>
 
             <input
+              id={`edit-name-${feedback._id}`}
               type="text"
               name="name"
+              className="form-control"
               value={formData.name}
               onChange={handleChange}
-              className="form-control"
               required
             />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">
+            <label
+              htmlFor={`edit-email-${feedback._id}`}
+              className="form-label"
+            >
               Email
             </label>
 
             <input
+              id={`edit-email-${feedback._id}`}
               type="email"
               name="email"
+              className="form-control"
               value={formData.email}
               onChange={handleChange}
-              className="form-control"
               required
             />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">
+            <label
+              htmlFor={`edit-message-${feedback._id}`}
+              className="form-label"
+            >
               Message
             </label>
 
             <textarea
+              id={`edit-message-${feedback._id}`}
               name="message"
-              value={formData.message}
-              onChange={handleChange}
               className="form-control"
               rows="4"
+              value={formData.message}
+              onChange={handleChange}
               required
             />
           </div>
 
           {error && (
-            <div
-              className="alert alert-danger"
-              role="alert"
-            >
+            <div className="alert alert-danger" role="alert">
               {error}
             </div>
           )}
@@ -152,17 +170,15 @@ function FeedbackItem({
           <div className="d-flex gap-2">
             <button
               type="submit"
-              className="btn btn-dark"
+              className="btn btn-dark btn-sm"
               disabled={isSaving}
             >
-              {isSaving
-                ? "Saving..."
-                : "Save Changes"}
+              {isSaving ? "Saving..." : "Save Changes"}
             </button>
 
             <button
               type="button"
-              className="btn btn-outline-secondary"
+              className="btn btn-outline-secondary btn-sm"
               onClick={handleCancel}
               disabled={isSaving}
             >
@@ -191,15 +207,31 @@ function FeedbackItem({
         {new Date(feedback.createdAt).toLocaleString()}
       </small>
 
-      {/* Show Edit only for the owner */}
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          {error}
+        </div>
+      )}
+
+      {/* Only the owner can see these buttons */}
       {feedback.isOwner && (
-        <div className="mt-3">
+        <div className="mt-3 d-flex gap-2">
           <button
             type="button"
             className="btn btn-outline-dark btn-sm"
             onClick={handleEdit}
+            disabled={isDeleting}
           >
             Edit
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-outline-danger btn-sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
           </button>
         </div>
       )}

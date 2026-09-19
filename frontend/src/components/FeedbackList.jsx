@@ -1,20 +1,10 @@
 import FeedbackItem from "./FeedbackItem";
 
-/**
- * Displays a list of feedback records or an empty state.
- *
- * @param {Object} props - Component properties.
- * @param {Array} props.feedback - Feedback records to display.
- * @param {Function} props.onDelete - Callback used to request deletion.
- * @param {Function} props.onFeedbackUpdated - Callback used after feedback is edited.
- * @returns {JSX.Element} Feedback list or empty-state UI.
- */
 function FeedbackList({
   feedback,
-  onDelete,
   onFeedbackUpdated,
+  onFeedbackDeleted,
 }) {
-  // Display a styled empty state when no feedback matches the filters.
   if (feedback.length === 0) {
     return (
       <div className="empty-state text-center py-5">
@@ -28,7 +18,8 @@ function FeedbackList({
         <h3>No feedback found</h3>
 
         <p>
-          There are no responses matching your current filters.
+          There are no responses matching your current
+          filters.
         </p>
       </div>
     );
@@ -40,8 +31,8 @@ function FeedbackList({
         <FeedbackItem
           key={item._id}
           feedback={item}
-          onDelete={onDelete}
           onFeedbackUpdated={onFeedbackUpdated}
+          onFeedbackDeleted={onFeedbackDeleted}
         />
       ))}
     </div>

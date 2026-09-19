@@ -4,6 +4,7 @@ const {
   createFeedback,
   getFeedback,
   updateFeedback,
+  deleteOwnFeedback,
   deleteFeedback,
 } = require("../controllers/FeedbackController");
 
@@ -26,6 +27,12 @@ router.get("/", getFeedback);
  * Only the owner of the feedback can edit it.
  */
 router.put("/:id", updateFeedback);
+
+/**
+ * Handles requests to delete feedback.
+ * Only the owner of the feedback can delete it.
+ */
+router.delete("/own/:id", deleteOwnFeedback);
 
 /**
  * Handles requests to delete a feedback record by ID.

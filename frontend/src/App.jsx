@@ -18,24 +18,11 @@ import {
 
 import "./App.css";
 
-/**
- * Displays the public customer feedback interface.
- *
- * Customers can submit feedback, view existing feedback,
- * and edit feedback that belongs to them.
- *
- * @returns {JSX.Element} Customer feedback interface.
- */
 function CustomerPage() {
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /**
-   * Loads feedback records from the backend.
-   *
-   * @returns {Promise<void>} Resolves after feedback is loaded.
-   */
   const loadFeedback = async () => {
     try {
       setError("");
@@ -45,6 +32,7 @@ function CustomerPage() {
       setFeedback(data);
     } catch (error) {
       console.error(error);
+
       setError("Unable to load feedback.");
     } finally {
       setLoading(false);
@@ -55,12 +43,6 @@ function CustomerPage() {
     loadFeedback();
   }, []);
 
-  /**
-   * Creates a new feedback record.
-   *
-   * @param {Object} newFeedback - Feedback submitted by the customer.
-   * @returns {Promise<void>} Resolves after feedback is created.
-   */
   const handleAddFeedback = async (newFeedback) => {
     try {
       const createdFeedback = await createFeedback(newFeedback);
@@ -71,15 +53,11 @@ function CustomerPage() {
       ]);
     } catch (error) {
       console.error(error);
+
       setError("Unable to submit feedback.");
     }
   };
 
-  /**
-   * Updates an existing feedback record in local state.
-   *
-   * @param {Object} updatedFeedback - Updated feedback returned by the backend.
-   */
   const handleFeedbackUpdated = (updatedFeedback) => {
     setFeedback((previous) =>
       previous.map((item) =>
@@ -87,6 +65,12 @@ function CustomerPage() {
           ? updatedFeedback
           : item
       )
+    );
+  };
+
+  const handleFeedbackDeleted = (deletedId) => {
+    setFeedback((previous) =>
+      previous.filter((item) => item._id !== deletedId)
     );
   };
 
@@ -116,34 +100,27 @@ function CustomerPage() {
           error={error}
           onFeedbackAdded={handleAddFeedback}
           onFeedbackUpdated={handleFeedbackUpdated}
+          onFeedbackDeleted={handleFeedbackDeleted}
         />
       </main>
     </div>
   );
 }
 
-/**
- * Main application router.
- *
- * @returns {JSX.Element} Application routes.
- */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public customer interface */}
         <Route
           path="/"
           element={<CustomerPage />}
         />
 
-        {/* Separate administrator login */}
         <Route
           path="/admin/login"
           element={<LoginPage />}
         />
 
-        {/* Protected administrator dashboard */}
         <Route
           path="/admin/dashboard"
           element={
@@ -153,7 +130,6 @@ function App() {
           }
         />
 
-        {/* Redirect /admin to the administrator login */}
         <Route
           path="/admin"
           element={
@@ -164,7 +140,6 @@ function App() {
           }
         />
 
-        {/* Redirect unknown routes to the customer page */}
         <Route
           path="*"
           element={

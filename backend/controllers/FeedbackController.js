@@ -195,7 +195,64 @@ const updateFeedback = async (req, res) => {
 };
 
 /**
+ * Deletes a feedback record only when the requester owns it.
+ *
+ * The customer's HTTP-only owner token is hashed and compared
+ * with the ownership hash stored for the feedback record.
+ *
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Promise<void>} Sends the deletion result as the response.
+ */
+const deleteOwnFeedback = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerToken = req.cookies.ownerToken;
+
+    if (!ownerToken) {
+      return res.status(403).json({
+        message:
+          "You are not allowed to delete this feedback",
+      });
+    }
+
+    const ownerTokenHash = crypto
+      .createHash("sha256")
+      .update(ownerToken)
+      .digest("hex");
+
+    const feedback = await Feedback.findOneAndDelete({
+      _id: id,
+      ownerTokenHash,
+    });
+
+    if (!feedback) {
+      return res.status(403).json({
+        message:
+          "You are not allowed to delete this feedback",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Feedback deleted successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Failed to delete own feedback:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message: "Failed to delete feedback",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Deletes a feedback record using its unique ID.
+ *
+ * This function is used by authenticated administrators.
  *
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
@@ -234,5 +291,6 @@ module.exports = {
   createFeedback,
   getFeedback,
   updateFeedback,
+  deleteOwnFeedback,
   deleteFeedback,
 };
